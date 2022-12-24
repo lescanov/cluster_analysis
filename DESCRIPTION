@@ -25,4 +25,5 @@ Imports:
     survival,
     survminer,
     tibble,
+    tidyr,
     usethis
