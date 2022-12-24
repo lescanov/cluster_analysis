@@ -26,7 +26,7 @@ create_normalization_factors <- function(
     compare_factor) {
         df <- df_with_factor %>%
             dplyr::filter(!!dplyr::sym(factor_colname) %in% c(ref_factor, compare_factor)) %>%
-            dplyr::group_by(!!sym(factor_colname)) %>%
+            dplyr::group_by(!!dplyr::sym(factor_colname)) %>%
             dplyr::summarise(n = n())
 
         length_ref <- df %>%
@@ -40,11 +40,11 @@ create_normalization_factors <- function(
             tibble::deframe()
 
         normalization_factors <- c(
-            factor(rep(ref_factor, length_ref)),
-            factor(rep(compare_factor, length_compare))
+            base::factor(rep(ref_factor, length_ref)),
+            base::factor(rep(compare_factor, length_compare))
         )
 
-        normalization_factors <- relevel(
+        normalization_factors <- stats::relevel(
             normalization_factors,
             ref = ref_factor
         )
@@ -54,12 +54,16 @@ create_normalization_factors <- function(
 
 #' Arrange raw counts by the order of specified factors for differential expression analysis
 #' 
-#' @param raw_counts A dataframe of raw counts for use in expression analysis, with sample/patient IDs as columns
-#' @param df_with_factor A dataframe that contains a column of factors to identify groups for expression analysis
-#' @param ref_factor A string literal for the reference factor found in factor_colname
-#' @param compare_factor A stirng literal for the factor contrasted against the reference factor, found in factor_colname
+#' @param raw_counts A dataframe of raw counts for use in expression analysis,
+#' with sample/patient IDs as columns
+#' @param df_with_factor A dataframe that contains a column of factors to
+#' identify groups for expression analysis
+#' @param ref_factor A string literal for the reference factor found in factor
+#' @param compare_factor A stirng literal for the factor contrasted against
+#' colname the reference factor, found in factor_colname
 #' @param factor_colname A string literal specifying a column in df_with_factor
-#' @param id_colname A string literal specifying a column that contains sample/patient IDs
+#' @param id_colname A string literal specifying a column that contains
+#' sample/patient IDs
 #'
 #' @return A dataframe of raw counts with columns ordered by a specified set of factors
 #' @export
@@ -123,16 +127,16 @@ arrange_df_by_norm_factors <- function(
 #' degs <- find_degs(df, norm_factors)
 find_degs <- function(arranged_raw_counts, normalization_factors) {
     # Convert to matrix for edgeR
-    input_matrix <- as.matrix(arranged_raw_counts)
+    input_matrix <- base::as.matrix(arranged_raw_counts)
 
     # Normalizing with TMM
     counts <- edgeR::DGEList(input_matrix)
-    keep_counts <- rowSums(counts$counts) > 50
+    keep_counts <- base::rowSums(counts$counts) > 50
     counts <- counts[keep_counts, , keep.lib.sizes = FALSE]
     counts <- edgeR::calcNormFactors(counts, method = "TMM")
 
     # Creating model matrix using normalization factors
-    model_matrix <- model.matrix(~normalization_factors)
+    model_matrix <- stats::model.matrix(~normalization_factors)
 
     # Find DEGs using glmQLF tests
     estimated_dispersion <- edgeR::estimateDisp(counts, model_matrix, robust = TRUE)
