@@ -19,5 +19,5 @@ Perform Principal Component analysis on normalized RNA-seq counts
 }
 \examples{
 rna_seq_counts <- some_data_frame
-pca_result <- perform(pca_on_counts)
+pca_result <- perform_pca_on_counts(rna_seq_counts)
 }

@@ -2,7 +2,11 @@
 
 export("%>%")
 export(append_principal_components)
+export(arrange_df_by_norm_factors)
+export(create_normalization_factors)
+export(ensembl_to_entrez_and_symbol)
 export(extract_principal_components)
+export(find_degs)
 export(perform_and_extract_pca)
 export(perform_pca_on_counts)
 importFrom(magrittr,"%>%")
