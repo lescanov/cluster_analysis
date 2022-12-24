@@ -38,7 +38,7 @@ perform_pca_on_counts <- function(normalized_counts, gene_id_colname) {
 extract_principal_components <- function(prcomp_result, number_of_pc) {
     # Principal components are stored as value x in prcomp object
     # Convert to dataframe in order to select components
-    principal_components <- as.data.frame(prcomp_result[["x"]])
+    principal_components <- base::as.data.frame(prcomp_result[["x"]])
 
     # Select number of components
     principal_components <- principal_components %>%
