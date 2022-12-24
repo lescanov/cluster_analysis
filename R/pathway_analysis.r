@@ -1,33 +1,42 @@
 # Purpose
 # Perform pathway analysis, specifically GSEA and ORA.
 
-library(clusterProfiler)
-library(ReactomePA)
-library(dplyr)
-library(ggplot2)
-
-# Perform GSEA analysis on a sorted vector of logFCs, named with entrez IDs.
-# Can perform GSEA using GO (using  All modules), KEGG or Reactome.
-# df_of_degs is intended to be the output of find_degs_between_clusters,
-# and this function assumes there are columns called logFC and entrez_id
-# in the input dataframe.
-# pathway annotation must be one of go, kegg or reactome.
-# output is a dataframe listing pathways and pvalues.
+#' Perform Gene Set Enrichment Analysis on differentially expressed genes
+#'
+#' Utilize clusterProfiler's GSEA algorithim to perform pathway analysis
+#' on a dataframe of differentially expressed genes. It is expected
+#' that the input dataframe of differentially expressed genes has
+#' a column for entrez gene IDs and a column for log fold change called
+#' "logFC".
+#' The user can choose 3 different pathway annotation databases:
+#' KEGG, Gene Ontology and Reactome. For Gene Ontology, all the
+#' databases are used.
+#'
+#' @param df_of_degs A dataframe of differentially expressed genes.
+#' Must contain a column for entrez geneIDs and logFC. Anticipated to
+#' be a result of edgeR's topTags funcion.
+#' @param pathway_annotation Must be a string literal matching one of
+#' "kegg", "go" or "reactome". Specifies which pathway annotation to
+#' use for pathway analysis.
+#'
+#' @return A gseaResult object
+#' @export
 perform_gsea <- function(df_of_degs, pathway_annotation) {
-    if (!pathway_annotation %in% c("go", "kegg", "reactome")) {
-        return(print("insert one of go, kegg or reactome"))
-    }
+    base::stopifnot(
+        pathway_annotation %in% c("go", "kegg", "reactome"),
+        "entrez_id" %in% colnames(df_of_degs)
+    )
 
     # Removing any NAs in df_of_degs
     df <- df_of_degs %>%
-        filter(is.na(entrez_id) == FALSE)
+        dplyr::filter(base::is.na(entrez_id) == FALSE)
 
     # For GSEA, must supply a sorted vector of logFCs with names as entrez ids
     gene_list <- df[["logFC"]]
     names(gene_list) <- df[["entrez_id"]]
 
     if (pathway_annotation == "go") {
-        result <- gseGO(
+        result <- clusterProfiler::gseGO(
             geneList = gene_list,
             OrgDb = "org.Hs.eg.db",
             ont = "ALL",
@@ -35,9 +44,9 @@ perform_gsea <- function(df_of_degs, pathway_annotation) {
             pAdjustMethod = "BH"
         )
     } else
-    
+
     if (pathway_annotation == "kegg") {
-        result <- gseKEGG(
+        result <- clusterProfiler::gseKEGG(
             geneList = gene_list,
             keyType = "ncbi-geneid",
             pvalueCutoff = 0.05
@@ -45,7 +54,7 @@ perform_gsea <- function(df_of_degs, pathway_annotation) {
     } else
 
     if (pathway_annotation == "reactome") {
-        result <- gsePathway(
+        result <- ReactomePA::gsePathway(
             geneList = gene_list
         )
     }
@@ -53,46 +62,56 @@ perform_gsea <- function(df_of_degs, pathway_annotation) {
     return(result)
 }
 
-# Perform ORA analysis on a vector of entrez IDs.
-# Can perform ORA using GO (using  All modules), KEGG or Reactome.
-# This specifically will perform pathway analysis on up or downregulated
-# genes, which must be specified by the up_or_down parameter.
-# df_of_degs is intended to be the output of find_degs_between_clusters,
-# and this function assumes there are columns called logFC and entrez_id
-# in the input dataframe.
-# pathway annotation must be one of go, kegg or reactome.
-# output is a dataframe listing pathways and pvalues.
+#' Perform Over-Representation Analysis on differentially expressed genes
+#'
+#' This function utilizes clusterProfiler's algorithim for ORA. Specifically,
+#' this will perform ora on a subset of differentially regulated genes,
+#' either upregulated or downregulated genes. The purpose of this design
+#' choice is to compliment GSEA's analysis by analyzing which
+#' particular pathways are being upregulated or downregulated specifically.
+#' The user can choose 3 different pathway annotation databases:
+#' "go", "kegg" or "reactome". For Gene Ontology, all databases are used.
+#'
+#' @param df_of_degs A dataframe of differentially expressed genes.
+#' Must contain a column for entrez geneIDs and logFC. Anticipated to
+#' be a result of edgeR's topTags funcion.
+#' @param pathway_annotation Must be a string literal matching one of
+#' "kegg", "go" or "reactome". Specifies which pathway annotation to
+#' use for pathway analysis.
+#' @param up_or_down A string literal of either "up" or "down", specifying
+#' if the user would like to perform ORA on up or downregulated genes.
+#'
+#' @return An enrichResult object
+#' @export
 perform_ora_on_deregulated_genes <- function(
     df_of_degs,
     pathway_annotation,
     up_or_down
     ) {
-    if (!pathway_annotation %in% c("go", "kegg", "reactome")) {
-        return(print("insert one of go, kegg or reactome"))
-    }
-
-    if (!up_or_down %in% c("up", "down")) {
-        return(print("insert one of up or down"))
-    }
+    base::stopifnot(
+        pathway_annotation %in% c("go", "kegg", "reactome"),
+        up_or_down %in% c("up", "down"),
+        "entrez_id" %in% colnames(df_of_degs)
+    )
 
     # Removing any NAs in df_of_degs
     df <- df_of_degs %>%
-        filter(is.na(entrez_id) == FALSE)
+        dplyr::filter(base::is.na(entrez_id) == FALSE)
 
     # Extracting up/downregulated genes
     if (up_or_down == "up") {
         upregulated_genes <- df %>%
-            filter(logFC > 0)
+            dplyr::filter(logFC > 0)
         gene_list <- upregulated_genes[["entrez_id"]]
     } else {
         downregulated_genes <- df %>%
-            filter(logFC < 0)
+            dplyr::filter(logFC < 0)
         gene_list <- downregulated_genes[["entrez_id"]]
     }
 
     # Performing pathway analysis on extracted genes
     if (pathway_annotation == "go") {
-        result <- enrichGO(
+        result <- clusterProfiler::enrichGO(
             gene = gene_list,
             ont = "ALL",
             OrgDb = org.Hs.eg.db
@@ -100,7 +119,7 @@ perform_ora_on_deregulated_genes <- function(
     } else
 
     if (pathway_annotation == "kegg") {
-        result <- enrichKEGG(
+        result <- clusterProfiler::enrichKEGG(
             gene = gene_list,
             keyType = "ncbi-geneid",
             qvalueCutoff = 0.05
@@ -108,7 +127,7 @@ perform_ora_on_deregulated_genes <- function(
     } else
 
     if (pathway_annotation == "reactome") {
-        result <- enrichPathway(
+        result <- ReactomePA::enrichPathway(
             gene = gene_list,
             qvalueCutoff = 0.05
         )
@@ -118,12 +137,21 @@ perform_ora_on_deregulated_genes <- function(
 }
 
 # Save dotplot (shows first 10 results) automatically to results folder
-save_dotplot <- function(pathway_analysis, title) {
-    plot <- dotplot(pathway_analysis, title =  title)
-    ggsave(
+
+#' Automatically save dotplot of pathway analysis
+#'
+#' @param pathway_analysis A gseaResult or enrichResult object
+#' @param title Title of the file to be saved
+#' @param path Path of the file destination. Defaults to "results/"
+#'
+#' @return A 8in (width) x 6in (height) pdf file. Dotplot shows top 10 pathways.
+#' @export
+save_dotplot <- function(pathway_analysis, title, path = "results/") {
+    plot <- clusterProfiler::dotplot(pathway_analysis, title =  title)
+    ggplot2::ggsave(
         plot = plot,
         filename = paste0(title, ".pdf"),
-        path = "results/",
+        path = path,
         height = 6,
         width = 8,
         units = "in"
@@ -132,12 +160,34 @@ save_dotplot <- function(pathway_analysis, title) {
 
 # Save ridgeplot for GSEA analyses (does not work for ORA), automatically
 # to the results folder.
-save_ridgeplot <- function(pathway_analysis, title) {
-    plot <- ridgeplot(pathway_analysis, showCategory = 10)
-    ggsave(
+
+#' Automatically save ridgeplot of pathway analysis
+#'
+#' NOTE: This function does not work with ORA analyses.
+#'
+#' @param pathway_analysis A gseaResult object
+#' @param title Title of the file to be saved
+#' @param path Path of the file destination. Defaults to "results/"
+#' @param number_of_pathways An unsigned number that specifies how many
+#' pathways to show in the ridgeplot. Defaults to 15.
+#'
+#' @return A ridgeplot of 8in (width) x 6in (height) pdf file. Ridgeplot shows
+#' specified number of pathways. Defaults to 15.
+#' @export
+save_ridgeplot <- function(
+    pathway_analysis,
+    title,
+    path = "results/",
+    number_of_pathways = 15
+    ) {
+    plot <- clusterProfiler::ridgeplot(
+        pathway_analysis,
+        showCategory = number_of_pathways
+    )
+    ggplot2::ggsave(
         plot = plot,
         filename = paste0(title, ".pdf"),
-        path = "results/",
+        path = path,
         height = 6,
         width = 8,
         units = "in"
