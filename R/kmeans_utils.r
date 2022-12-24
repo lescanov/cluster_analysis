@@ -63,6 +63,7 @@ extract_clusters_from_kmeans <- function(kmeans_cluster_result) {
 #' random sets should be chosen. ?kmeans for more information.
 #'
 #' @return A dataframe with columns of patient IDs and cluster information
+#' @export
 perform_kmeans_and_extract_clusters <- function(
     random_seed,
     input_df,
