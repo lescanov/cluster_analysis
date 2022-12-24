@@ -20,5 +20,7 @@ Imports:
     magrittr,
     org.Hs.eg.db,
     stats,
+    survival,
+    survminer,
     tibble,
     usethis
