@@ -14,17 +14,21 @@ arrange_df_by_norm_factors(
 )
 }
 \arguments{
-\item{raw_counts}{A dataframe of raw counts for use in expression analysis, with sample/patient IDs as columns}
+\item{raw_counts}{A dataframe of raw counts for use in expression analysis,
+with sample/patient IDs as columns}
 
-\item{df_with_factor}{A dataframe that contains a column of factors to identify groups for expression analysis}
+\item{df_with_factor}{A dataframe that contains a column of factors to
+identify groups for expression analysis}
 
-\item{ref_factor}{A string literal for the reference factor found in factor_colname}
+\item{ref_factor}{A string literal for the reference factor found in factor}
 
-\item{compare_factor}{A stirng literal for the factor contrasted against the reference factor, found in factor_colname}
+\item{compare_factor}{A stirng literal for the factor contrasted against
+colname the reference factor, found in factor_colname}
 
 \item{factor_colname}{A string literal specifying a column in df_with_factor}
 
-\item{id_colname}{A string literal specifying a column that contains sample/patient IDs}
+\item{id_colname}{A string literal specifying a column that contains
+sample/patient IDs}
 }
 \value{
 A dataframe of raw counts with columns ordered by a specified set of factors
