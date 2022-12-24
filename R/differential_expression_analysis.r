@@ -1,13 +1,6 @@
 # Purpose:
 # Perform differential gene expression analysis between two groups
 
-use_package("edgeR")
-use_package("dplyr")
-use_package("tibble")
-use_package("stats")
-use_package("org.Hs.eg.db")
-use_package("AnnotationDbi")
-
 #' Create normalization factors for edgeR
 #'
 #' @param df_with_factor Dataframe with a column corresponding to categorical factors

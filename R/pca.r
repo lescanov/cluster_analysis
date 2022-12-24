@@ -1,9 +1,5 @@
 # Purpose
 # Perform PCA on raw counts and extract the first 2 principal components
-use_package("dplyr")
-use_package("tibble")
-use_package("factoextra")
-use_package("magrittr")
 
 #' Perform Principal Component analysis on normalized RNA-seq counts
 #'

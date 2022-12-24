@@ -12,10 +12,12 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports: 
     AnnotationDbi,
+    devtools,
     dplyr,
     edgeR,
     factoextra,
     magrittr,
     org.Hs.eg.db,
     stats,
-    tibble
+    tibble,
+    usethis
