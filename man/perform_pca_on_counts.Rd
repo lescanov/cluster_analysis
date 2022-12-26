@@ -18,6 +18,7 @@ A prcomp object of centred and scaled principal components, with patients as row
 Perform Principal Component analysis on normalized RNA-seq counts
 }
 \examples{
-rna_seq_counts <- some_data_frame
-pca_result <- perform_pca_on_counts(rna_seq_counts)
+# Do not run
+# rna_seq_counts <- some_data_frame
+# pca_result <- perform_pca_on_counts(rna_seq_counts)
 }

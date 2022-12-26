@@ -12,16 +12,21 @@ create_normalization_factors(
 )
 }
 \arguments{
-\item{df_with_factor}{Dataframe with a column corresponding to categorical factors}
+\item{df_with_factor}{Dataframe with a column corresponding to
+categorical factors}
 
-\item{factor_colname}{A string literal that species the column with categorical factors}
+\item{factor_colname}{A string literal that species the column with
+categorical factors}
 
-\item{ref_factor}{The factor that will be used a reference in the differential expression analysis}
+\item{ref_factor}{The factor that will be used a reference in the
+differential expression analysis}
 
-\item{compare_factor}{The factor that will be compared against the reference factor}
+\item{compare_factor}{The factor that will be compared against
+the reference factor}
 }
 \value{
-Returns a factor with levels corresponding to ref_factor and compare_factor, which reflect the number of samples assigned to each factor.
+Returns a factor with levels corresponding to ref_factor and
+compare_factor, which reflect the number of samples assigned to each factor.
 }
 \description{
 Create normalization factors for edgeR

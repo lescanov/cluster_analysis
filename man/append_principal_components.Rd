@@ -23,12 +23,3 @@ A single dataframe that has principal components appended to df_to_append
 \description{
 Inner join principal components to a dataframe
 }
-\examples{
-pc_1_2 <- perform_and_extract_pca(rnaseq_counts, gene_id, 2)
-df <- some_data_frame
-df_with_pc_1_2 <- append_principal_components(
-     df,
-     pc_1_2,
-     "some_colname"
-)
-}

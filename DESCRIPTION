@@ -12,7 +12,6 @@ RoxygenNote: 7.2.3
 Imports: 
     AnnotationDbi,
     clusterProfiler,
-    devtools,
     dplyr,
     edgeR,
     factoextra,
@@ -20,10 +19,14 @@ Imports:
     ggpubr,
     magrittr,
     org.Hs.eg.db,
+    purrr,
     ReactomePA,
+    rstatix,
     stats,
     survival,
     survminer,
     tibble,
-    tidyr,
-    usethis
+    tidyr
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

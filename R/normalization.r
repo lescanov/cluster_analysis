@@ -65,7 +65,7 @@ normalize_counts <- function(input_df, ids_to_use, filter_method = "liberal") {
         keep_counts <- edgeR::filterByExpr(counts)
     } else
     if (filter_method == "liberal") {
-        keep_counts <- stats::rowSums(counts$counts) > 50
+        keep_counts <- base::rowSums(counts$counts) > 50
     }
 
     # Normalizing with TMM

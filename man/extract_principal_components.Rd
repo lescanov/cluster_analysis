@@ -19,6 +19,7 @@ Extract specified amount of principal components from a prcomp object
 }
 \examples{
 # Extract first 2 principal components from prcomp result
-pca <- perform_pca_on_counts(some_rnaseq_counts)
-pc_1_and_2 <- extract_principal_components(pca, number_of_pc = 2)
+# Do not run
+# pca <- perform_pca_on_counts(some_rnaseq_counts)
+# pc_1_and_2 <- extract_principal_components(pca, number_of_pc = 2)
 }

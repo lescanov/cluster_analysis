@@ -14,26 +14,28 @@ find_degs_between_clusters(
 )
 }
 \arguments{
-\item{df_with_factor}{A dataframe that contains a column of factors to identify groups for expression analysis}
+\item{df_with_factor}{A dataframe that contains a column of factors
+to identify groups for expression analysis}
 
 \item{factor_colname}{A string literal specifying a column in df_with_factor}
 
-\item{ref_factor}{A string literal for the reference factor found in factor_colname}
+\item{ref_factor}{A string literal for the reference factor found in
+factor_colname}
 
-\item{compare_factor}{A stirng literal for the factor contrasted against the reference factor, found in factor_colname}
+\item{compare_factor}{A stirng literal for the factor contrasted against
+the reference factor, found in factor_colname}
 
-\item{raw_counts}{A dataframe of raw counts for use in expression analysis, with sample/patient IDs as columns}
+\item{raw_counts}{A dataframe of raw counts for use in expression
+analysis, with sample/patient IDs as columns}
 
-\item{id_colname}{A string literal specifying a column that contains sample/patient IDs}
+\item{id_colname}{A string literal specifying a column that contains
+sample/patient IDs}
 }
 \value{
-A dataframe resulting from the edgeR topTags function, detailing differentially expressed genes between two groups, with columns for gene symbols and entrez IDs.
+A dataframe resulting from the edgeR topTags function, detailing
+differentially expressed genes between two groups, with columns for gene
+symbols and entrez IDs.
 }
 \description{
 Identify differentially expressed genes between two groups, while generating normalization factors, arranged raw counts, and columns of converted IDs.
-}
-\examples{
-df <- some_raw_rnaseq_counts
-factor <- some_df_with_factors
-result <- find_degs_between_clusters(df_with_factor = factor, raw_counts = df, ...)
 }

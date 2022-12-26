@@ -36,15 +36,3 @@ A dataframe of raw counts with columns ordered by a specified set of factors
 \description{
 Arrange raw counts by the order of specified factors for differential expression analysis
 }
-\examples{
-raw_counts <- some_rnaseq_counts
-df <- some_df_with_reference_and_compare_factors
-arranged_df <- arrange_df_by_norm_factors(
-     raw_counts = raw_counts,
-     df_with_factor = df,
-     factor_colname = "factor_column_name",
-     ref_factor =  ref_factor,
-     compare_factor = compare_factor,
-     id_colname = "id_column_name"
-)
-}

@@ -7,20 +7,16 @@
 ensembl_to_entrez_and_symbol(deg_df, id_colname = "ensembl_id")
 }
 \arguments{
-\item{deg_df}{A dataframe that is a result of the topTags edgeR function. Can be a dataframe returned from find_degs function.}
+\item{deg_df}{A dataframe that is a result of the topTags edgeR function.
+Can be a dataframe returned from find_degs function.}
 
-\item{id_colname}{A string literal that specifies the column in the dataframe reserved for ENSEMBL IDs. By default, assumed to be "ensembl_id".}
+\item{id_colname}{A string literal that specifies the column in the dataframe
+reserved for ENSEMBL IDs. By default, assumed to be "ensembl_id".}
 }
 \value{
-deg_df with two new columns, one for gene symbols, another for entrez IDs
+deg_df with two new columns, one for gene symbols, another for
+entrez IDs
 }
 \description{
 Convert ENSEMBL IDs into gene symbols and entrez-IDs
-}
-\examples{
-# Get a dataframe of differentially expressed genes
-result <- find_degs(foo, bar)
-
-# Convert ensembl IDs to gene symbols and entrez ids, for downstream analysis
-result <- ensembl_to_entrez_and_symbol(result)
 }
