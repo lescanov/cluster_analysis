@@ -64,81 +64,6 @@ perform_and_plot_kruskal_test <- function(df, expression, group) {
     print(boxplot)
 }
 
-#' Define groups: Subset of dataset and Dataset without subset
-#'
-#' This function separates samples into two groups. The first, a subset of
-#' samples (such as a group of patients belonging to a particular substype)
-#' and the second, the rest of the dataset without samples of this subset.
-#' This function assumes that there is a column specifying sample groupings,
-#' and that there is both a grouping for the subset the user is interested in
-#' as well as a grouping for all samples in the dataset.
-#' This function is used to set hypotheses test downstream, if the user
-#' wishes to compare a subset against an "All" group. This is particularly
-#' useful especially when samples can inhabit multiple different subtypes
-#' for example a cancer patient can harbour multiple mutations. If
-#' the user is interested to see if the expression of a gene is enriched
-#' in a particular subset of patients, this can serve as a statistical
-#' basis in testing if this is actually so.
-#' The main purppose of this function is maintain the assumption of
-#' independence that many inferrential hypothesis tests require.
-#'
-#' @param input_df A dataframe that contains samples the user wishes to compare.
-#' This dataframe should have a grouping for both the subset and the whole
-#' dataset.
-#' @param subset_group A string literal that defines a subset of samples the
-#' user wishes to compare to the rest of the dataset.
-#' @param reference_group A string literal that defines samples belonging to the
-#' whole dataset.
-#' @param identifier_column A column that contains the grouping variables
-#' subset_group and reference_group.
-#' @param sample_column A column that contains the sample IDs for this dataset.
-#'
-#' @return A dataframe with a column that specifies a comparison between
-#' the outlined subset and the rest of the dataset.
-#' @export
-#'
-#' @examples
-#' # Example for data preparation prior to using the function
-#' data(iris)
-#' # Defining a grouping that encapsulates the entire dataset
-#' all_group <- iris %>% dplyr::mutate(group = "all")
-#'
-#' # Defining a subset of the dataset
-#' sestosa_group <- iris %>%
-#'      dplyr::filter(Species %in% "sestosa") %>%
-#'      dplyr::mutate(group = "sestosa")
-#'
-#' # Combining dataframes, this can then be used in the function.
-#' # The group column will be identifier_column.
-#' whole_and_subset <- rbind(all_group, sestosa_group)
-define_subset_comparisons <- function(input_df, subset_group, reference_group, identifier_column, sample_column) {
-    # Defining the subset group
-    subset_df <- input_df %>%
-        dplyr::filter({{identifier_column}} %in% subset_group) %>%
-        dplyr::distinct({{sample_column}}, .keep_all = TRUE)
-
-    # Identify patients that are different among reference and subset
-    subset_patients <- subset_df %>%
-        dplyr::select({{sample_column}}) %>%
-        tibble::deframe()
-
-    # Defining reference group
-    reference_df <- input_df %>%
-        dplyr::filter({{identifier_column}} %in% reference_group) %>%
-        dplyr::distinct({{sample_column}}, .keep_all = TRUE)
-
-    # Defining reference, without subset patients
-    reference_without_subset <- reference_df %>%
-        dplyr::filter(!{{sample_column}} %in% subset_patients)
-
-    # Binding reference_without_subset and subset
-    reference_and_subset <- reference_without_subset %>%
-        dplyr::bind_rows(subset_df) %>%
-        dplyr::mutate(group = paste(subset_group, "vs", reference_group))
-
-    return(reference_and_subset)
-}
-
 #' Create a dataframe with grouping variables subset vs whole (without subset)
 #'
 #' The purpose of this function is to create a dataframe where one wants to
@@ -191,6 +116,23 @@ define_subset_against_whole <- function(
     return(subset_against_whole)
 }
 
+#' Create multiple dataframes with subset vs whole(without subset)
+#'
+#' This creates a list of multiple different dataframes, consisting of
+#' subset vs whole (without subset) columns.
+#'
+#' @param input_df A dataframe that contains: a column with a grouping variable
+#' from which one can extract a subset of the data and a column containing
+#' a metric that the user wishes to compare between subset and rest of dataset.
+#' @param grouping_column The column that contains the grouping variable, such
+#' as patient subtype, etc.
+#' @param metric_column The column that contains a metric the user would like
+#' to compare between two subsets of the dataset.
+#' @param list_of_subset_groups A list of string literals specifying subgroups
+#' of the grouping column.
+#'
+#' @return A list of adataframes of the format of define_subset_against_whole()
+#' @export
 create_list_of_subset_comparisons <- function(
     input_df,
     grouping_colname,
@@ -209,6 +151,164 @@ create_list_of_subset_comparisons <- function(
 
     return(list_of_subset_comparisons)
 }
+
+#' Verify equality of variances in samples grouped by a variable
+#'
+#' This function uses Levene's test to determine if variance is equal
+#' amongst all subgroups.
+#'
+#' @param input_df A dataframe that contains: a column with a grouping variable
+#' from which one can extract a subset of the data and a column containing
+#' a metric that the user wishes to compare between subset and rest of dataset.
+#' @param grouping_column The column that contains the grouping variable, such
+#' as patient subtype, etc.
+#' @param metric_column The column that contains a metric the user would like
+#' to compare between two subsets of the dataset.
+#'
+#' @return A boolean value, TRUE if the p-value obtained from Levene's test is
+#' greater than 0.05 and FALSE if the p-value is less tha 0.05.
+#' @export
+verify_equality_of_variances <- function(
+    input_df,
+    grouping_colname,
+    metric_colname
+) {
+    test_formula <- stats::as.formula(
+        paste0(metric_colname, "~", grouping_colname)
+    )
+
+    # Testing ewuality of variances between the two groups
+    levene_result <- rstatix::levene_test(input_df, test_formula)[["p"]]
+
+    if (levene_result > 0.05) {
+        return(TRUE)
+    } else {
+        return(FALSE)
+    }
+}
+
+#' Verify if distribution amongst grouping variables is normal
+#'
+#' This function determines if the distribution of a particular metric
+#' is normal, across grouping variables, using a Shapiro-Wilk test. It
+#' is expected that this function will be used to assess which test is
+#' valid for the subset vs whole (without subset) comparisons.
+#'
+#' @param input_df A dataframe that contains: a column with a grouping variable
+#' from which one can extract a subset of the data and a column containing
+#' a metric that the user wishes to compare between subset and rest of dataset.
+#' @param grouping_column The column that contains the grouping variable, such
+#' as patient subtype, etc.
+#' @param metric_column The column that contains a metric the user would like
+#' to compare between two subsets of the dataset.
+#' @param subset A string literal that specifies a subgroup in the grouping
+#' column
+#'
+#' @return A boolean value, TRUE if the p-value obtained from Shapiro-Wilk's
+#' test is greater than 0.05 and FALSE if the p-value is less tha 0.05.
+#' @export
+verify_normality <- function(
+    input_df,
+    grouping_colname,
+    metric_colname,
+    subset = "subset"
+) {
+    # Getting subsets of data
+    subset_data <- input_df %>%
+        dplyr::filter(!!dplyr::sym(grouping_colname) %in% subset)
+
+    without_subset_data <- input_df %>%
+        dplyr::filter(!(!!dplyr::sym(grouping_colname)) %in% subset)
+
+    # Testing that both subsets of dataset have normal distribution
+    shapiro_subset <- subset_data %>%
+        rstatix::shapiro_test(!!dplyr::sym(metric_colname))
+    shapiro_without_subset <- without_subset_data %>%
+        rstatix::shapiro_test(!!dplyr::sym(metric_colname))
+
+    if (shapiro_subset > 0.05 && shapiro_without_subset > 0.05) {
+        return(TRUE)
+    } else {
+        return(FALSE)
+    }
+}
+
+#' Verify if distributions under different grouping variables are equal
+#'
+#' This function is meant to test equality of distributions, to determine
+#' if the Mann-Whitney test is appropriate. It uses the Kolomogorov-Smirnov test
+#' to assess if two distributions are equal.
+#'
+#' @param input_df A dataframe that contains: a column with a grouping variable
+#' from which one can extract a subset of the data and a column containing
+#' a metric that the user wishes to compare between subset and rest of dataset.
+#' @param grouping_column The column that contains the grouping variable, such
+#' as patient subtype, etc.
+#' @param metric_column The column that contains a metric the user would like
+#' to compare between two subsets of the dataset.
+#' @param subset A string literal that specifies a subgroup in the grouping
+#' column
+#'
+#' @return A boolean value, TRUE if the p-value obtained from Kolmogorov-Smirnov
+#' test is greater than 0.05 and FALSE if the p-value is less tha 0.05.
+#' @export
+verify_equal_disitributions <- function(
+    input_df,
+    grouping_colname,
+    metric_colname,
+    subset = "subset"
+) {
+    # Defining data for subset
+    subset_data <- input_df %>%
+        dplyr::filter(!!dplyr::sym(grouping_colname) %in% subset) %>%
+        dplyr::select(!!dplyr::sym(metric_colname)) %>%
+        tibble::deframe()
+
+    without_subset_data <- input_df %>%
+        dplyr::filter(!(!!dplyr::sym(grouping_colname)) %in% subset) %>%
+        dplyr::select(!!dplyr::sym(metric_colname)) %>%
+        tibble::deframe()
+
+    # Perform Kolmogorov-Smirnov test
+    ks_result <- ks.test(
+        x = without_subset_data,
+        y = subset_data,
+        data = input_df
+    )
+
+    if (ks_result > 0.05) {
+        return(TRUE)
+    } else {
+        return(FALSE)
+    }
+}
+
+susbet_vs_whole_t_test <- function(
+    input_df,
+    grouping_colname = "group",
+    metric_colanme,
+    equal_variance = FALSE
+) {
+    # Check if equal_variance is a boolean value
+    stopifnot(is.logical(equal_variance))
+
+    # Create comparison formula using metric and grouping variables
+    comparison_formula <- stats::as.formula(
+        paste0(metric_colanme, "~", grouping_colname)
+    )
+
+    # Perform t-test, depending on value of equal variance, will perform
+    # etiher Welch's (equal variance = FALSE) or Students (TRUE)
+    result <- input_df %>%
+        rstatix::t_test(
+            comparison_formula,
+            var.equal = equal_variance
+        )
+
+    return(result)
+}
+
+
 
 #' Compare a subset against the rest of dataset using Mann-Whitney U Tests.
 subset_vs_whole_mann_whitney <- function(
@@ -230,12 +330,15 @@ subset_vs_whole_mann_whitney <- function(
     return(result)
 }
 
-adjusted_subset_vs_whole_mann_whitney <- function(
+adjusted_subset_vs_whole_test <- function(
     input_df,
     grouping_colname,
     metric_colname,
-    list_of_subset_groups
+    list_of_subset_groups,
+    test_to_use
 ) {
+    stopifnot(test_to_use %in% c("student", "welch", "mann_whitney"))
+
     # Create a list of dataframes that utilize multiple different subsets
     # of the same dataset
     list_of_subset_comparisons <- create_list_of_subset_comparisons(
@@ -245,20 +348,106 @@ adjusted_subset_vs_whole_mann_whitney <- function(
         list_of_subset_groups = list_of_subset_groups
     )
 
-    # Supplying this list to Mann whitney
-    list_of_mann_whitney_results <- purrr::map(
-        list_of_subset_comparisons,
-        subset_vs_whole_mann_whitney,
-        grouping_colname = grouping_colname,
-        metric_colname = metric_colname
-    )
+    if (test_to_use == "mann_whitney") {
+        test_result <- purrr::map(
+            list_of_subset_comparisons,
+            subset_vs_whole_mann_whitney,
+            metric_colname = metric_colname
+        )
+    } else if (test_to_use == "welch") {
+        test_result <- purrr::map(
+            list_of_subset_comparisons,
+            subset_vs_whole_t_test,
+            metric_colname = metric_colname,
+            equal_variance = FALSE
+        )
+    } else if (test_to_use == "student") {
+        test_result <- purrr::map(
+            list_of_subset_comparisons,
+            subset_vs_whole_t_test,
+            metric_colname = metric_colname,
+            equal_variance = TRUE
+        )
+    }
 
     # Combining list into one dataframe then correcting p-value
-    result_df <- list_of_mann_whitney_results %>%
+    result_df <- test_result %>%
         dplyr::bind_rows() %>%
         rstatix::adjust_pvalue(method = "fdr")
 
     return(result_df)
+}
+
+#' Determine which hypothesis test is appropriate for distributions
+#'
+#' There are three hypothesis tests that are considered for this function:
+#' Student t-test (assumption of variance is equal), Welch's t-test
+#' (assumotion of unequal variances) when distribution of residuals
+#' are normal. When normality is not achieved, this function
+#' will assess if the Mann-Whitney U-test is appropriate by testing
+#' if distributions are equal via. the Kolomogrov-Smirnov test.
+#'
+#' @param input_df A dataframe that contains: a column with a grouping variable
+#' from which one can extract a subset of the data and a column containing
+#' a metric that the user wishes to compare between subset and rest of dataset.
+#' @param grouping_column The column that contains the grouping variable, such
+#' as patient subtype, etc.
+#' @param metric_column The column that contains a metric the user would like
+#' to compare between two subsets of the dataset.
+#' @param subset A string literal that specifies a subgroup in the grouping
+#' column
+#'
+#' @return A string literal of: "mann_whitney", "welch", "student" or "other".
+#' These represent the appropriate hypothesis test to use given the
+#' distributions of the subset and whole (without subset) portions of the
+#' dataset. The "other" represents a case where all the tests fail and
+#' an alternative test should be used.
+#' @export
+decide_which_hypothesis_test <- function(
+    input_df,
+    grouping_colname,
+    metric_colname,
+    subset
+) {
+    normal_distribution <- verify_normality(
+        input_df = input_df,
+        grouping_colname = grouping_colname,
+        metric_colname = metric_colname
+    )
+
+    if (normal_distribution == FALSE) {
+        print("Shapiro-Wilk test failed: Non-normal distribution")
+        equal_distribution <- verify_equal_disitributions(
+            input_df = input_df,
+            grouping_colname = grouping_colname,
+            metric_colname = metric_colname
+        )
+
+        if (equal_distribution == TRUE) {
+            result <- "mann_whitney"
+            print("Kolmogorov-Smnirov test passed: Mann-Whitney is appropriate")
+            return(result)
+        } else {
+            result <- "other"
+            print("Kolmogorov-Smnirov test failed: Must find alternative test")
+            return(result)
+        }
+    }
+    print("Shapiro-Wilk's test passed: Normal distribution assumed")
+
+    equal_variance <- verify_equality_of_variances(
+        input_df = input_df,
+        grouping_colname = grouping_colname,
+        metric_colanme = metric_colname
+    )
+
+    if (equal_variance == FALSE) {
+        result <- "welch"
+        print("Levene's test failed: Use Welch's t-test")
+    } else {
+        result <- "student"
+        print("Leven's test passed: Use student's t-test")
+    }
 }
 
 
