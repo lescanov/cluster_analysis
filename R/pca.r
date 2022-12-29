@@ -102,8 +102,7 @@ append_principal_components <- function(
     principal_component_df,
     colname_to_append_by) {
         stopifnot(
-            nrow(df_to_append) == nrow(principal_component_df),
-            colname_to_append_by %in% colnames(df_to_append) & colname_to_append_by %in% colnames(principal_component_df)
+            nrow(df_to_append) == nrow(principal_component_df)
         )
 
         # Extract components
