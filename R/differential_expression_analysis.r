@@ -196,6 +196,7 @@ ensembl_to_entrez_and_symbol <- function(deg_df, id_colname = "ensembl_id") {
 #' @return A dataframe resulting from the edgeR topTags function, detailing
 #' differentially expressed genes between two groups, with columns for gene
 #' symbols and entrez IDs.
+#' @export
 find_degs_between_clusters <- function(
     df_with_factor,
     factor_colname = "cluster",
