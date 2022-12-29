@@ -283,7 +283,23 @@ verify_equal_disitributions <- function(
     }
 }
 
-susbet_vs_whole_t_test <- function(
+#' Perform a t-test on a subset against the rest of a dataset
+#'
+#' @param input_df A dataframe that contains: a column with a grouping variable
+#' from which one can extract a subset of the data and a column containing
+#' a metric that the user wishes to compare between subset and rest of dataset.
+#' @param grouping_column The column that contains the grouping variable, such
+#' as patient subtype, etc.
+#' @param metric_column The column that contains a metric the user would like
+#' to compare between two subsets of the dataset.
+#' @param equal_variance A boolean value stating whether or not the
+#' assumption of equal variance is TRUE or FALSE. If TRUE, a student's t-test
+#' will be performed. If FALSE, then Welch's t-test instead. The default is
+#' FALSE, as R assumes that variance is unequal by default.
+#'
+#' @return A dataframe detailing results of the test.
+#' @export
+subset_vs_whole_t_test <- function(
     input_df,
     grouping_colname = "group",
     metric_colanme,
@@ -308,9 +324,18 @@ susbet_vs_whole_t_test <- function(
     return(result)
 }
 
-
-
 #' Compare a subset against the rest of dataset using Mann-Whitney U Tests.
+#'
+#' @param input_df A dataframe that contains: a column with a grouping variable
+#' from which one can extract a subset of the data and a column containing
+#' a metric that the user wishes to compare between subset and rest of dataset.
+#' @param grouping_column The column that contains the grouping variable, such
+#' as patient subtype, etc.
+#' @param metric_column The column that contains a metric the user would like
+#' to compare between two subsets of the dataset.
+#'
+#' @return A dataframe detailing results of the test.
+#' @export
 subset_vs_whole_mann_whitney <- function(
     input_df,
     grouping_colname = "group",
@@ -328,54 +353,6 @@ subset_vs_whole_mann_whitney <- function(
         )
 
     return(result)
-}
-
-adjusted_subset_vs_whole_test <- function(
-    input_df,
-    grouping_colname,
-    metric_colname,
-    list_of_subset_groups,
-    test_to_use
-) {
-    stopifnot(test_to_use %in% c("student", "welch", "mann_whitney"))
-
-    # Create a list of dataframes that utilize multiple different subsets
-    # of the same dataset
-    list_of_subset_comparisons <- create_list_of_subset_comparisons(
-        input_df = input_df,
-        grouping_colname = grouping_colname,
-        metric_colname = metric_colname,
-        list_of_subset_groups = list_of_subset_groups
-    )
-
-    if (test_to_use == "mann_whitney") {
-        test_result <- purrr::map(
-            list_of_subset_comparisons,
-            subset_vs_whole_mann_whitney,
-            metric_colname = metric_colname
-        )
-    } else if (test_to_use == "welch") {
-        test_result <- purrr::map(
-            list_of_subset_comparisons,
-            subset_vs_whole_t_test,
-            metric_colname = metric_colname,
-            equal_variance = FALSE
-        )
-    } else if (test_to_use == "student") {
-        test_result <- purrr::map(
-            list_of_subset_comparisons,
-            subset_vs_whole_t_test,
-            metric_colname = metric_colname,
-            equal_variance = TRUE
-        )
-    }
-
-    # Combining list into one dataframe then correcting p-value
-    result_df <- test_result %>%
-        dplyr::bind_rows() %>%
-        rstatix::adjust_pvalue(method = "fdr")
-
-    return(result_df)
 }
 
 #' Determine which hypothesis test is appropriate for distributions
@@ -450,7 +427,82 @@ decide_which_hypothesis_test <- function(
     }
 }
 
+#' Perform multiple hypothesis tests on subset vs whole (without subset)
+#'
+#' @param input_df A dataframe that contains: a column with a grouping variable
+#' from which one can extract a subset of the data and a column containing
+#' a metric that the user wishes to compare between subset and rest of dataset.
+#' @param grouping_column The column that contains the grouping variable, such
+#' as patient subtype, etc.
+#' @param metric_column The column that contains a metric the user would like
+#' to compare between two subsets of the dataset.
+#' @param test_to_use A string literal which match the follow: "student", "welch",
+#' "mann_whitney". Specifies a test to use.
+#' @param list_of_subset_groups A list of string literals that specify
+#' subgroups that exist in grouping_column
+#'
+#' @return A dataframe of test results, with adjusted p-values.
+#' @export
+adjusted_subset_vs_whole_test <- function(
+    input_df,
+    grouping_colname,
+    metric_colname,
+    list_of_subset_groups,
+    test_to_use
+) {
+    stopifnot(test_to_use %in% c("student", "welch", "mann_whitney"))
 
+    # Create a list of dataframes that utilize multiple different subsets
+    # of the same dataset
+    list_of_subset_comparisons <- create_list_of_subset_comparisons(
+        input_df = input_df,
+        grouping_colname = grouping_colname,
+        metric_colname = metric_colname,
+        list_of_subset_groups = list_of_subset_groups
+    )
+
+    if (test_to_use == "mann_whitney") {
+        test_result <- purrr::map(
+            list_of_subset_comparisons,
+            subset_vs_whole_mann_whitney,
+            metric_colname = metric_colname
+        )
+    } else if (test_to_use == "welch") {
+        test_result <- purrr::map(
+            list_of_subset_comparisons,
+            subset_vs_whole_t_test,
+            metric_colname = metric_colname,
+            equal_variance = FALSE
+        )
+    } else if (test_to_use == "student") {
+        test_result <- purrr::map(
+            list_of_subset_comparisons,
+            subset_vs_whole_t_test,
+            metric_colname = metric_colname,
+            equal_variance = TRUE
+        )
+    }
+
+    # Combining list into one dataframe then correcting p-value
+    result_df <- test_result %>%
+        dplyr::bind_rows() %>%
+        rstatix::adjust_pvalue(method = "fdr")
+
+    return(result_df)
+}
+
+#' Create a plot comparing subset and rest of data
+#'
+#' @param input_df A dataframe that contains: a column with a grouping variable
+#' from which one can extract a subset of the data and a column containing
+#' a metric that the user wishes to compare between subset and rest of dataset.
+#' @param grouping_column The column that contains the grouping variable, such
+#' as patient subtype, etc.
+#' @param metric_column The column that contains a metric the user would like
+#' to compare between two subsets of the dataset.
+#'
+#' @return A plot
+#' @export
 plot_subset_comparisons <- function(
     input_df,
     grouping_colname,
@@ -471,10 +523,20 @@ plot_subset_comparisons <- function(
 
 }
 
-# This function utillzes a list of dataframes specifying expression of a y_variable
-# across different subtypes specified by x_varbiable.
-# Using the define_subset_comparisons function will produce a column called group
-# that details which comparison is being made.
+#' Create a plot of multiple subset vs rest comparisons
+#'
+#' @param input_df A dataframe that contains: a column with a grouping variable
+#' from which one can extract a subset of the data and a column containing
+#' a metric that the user wishes to compare between subset and rest of dataset.
+#' @param grouping_column The column that contains the grouping variable, such
+#' as patient subtype, etc.
+#' @param metric_column The column that contains a metric the user would like
+#' to compare between two subsets of the dataset.
+#' @param list_of_subset_groups A list of string literals specifying
+#' subgroups that exist in grouping_column
+#'
+#' @return A plot of multiple plots
+#' @export
 plot_each_subset_comparison <- function(
     grouping_colname,
     metric_colname,
