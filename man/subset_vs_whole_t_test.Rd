@@ -31,5 +31,5 @@ to compare between two subsets of the dataset.}
 A dataframe detailing results of the test.
 }
 \description{
-Perform a t-test on a subset against the rest of a dataset
+There are two types of t-tests that this function can perform
 }

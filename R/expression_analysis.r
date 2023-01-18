@@ -222,9 +222,12 @@ verify_normality <- function(
 
     # Testing that both subsets of dataset have normal distribution
     shapiro_subset <- subset_data %>%
-        rstatix::shapiro_test(!!dplyr::sym(metric_colname))
+        rstatix::shapiro_test(!!dplyr::sym(metric_colname)) %>%
+        dplyr::select(p)
+
     shapiro_without_subset <- without_subset_data %>%
-        rstatix::shapiro_test(!!dplyr::sym(metric_colname))
+        rstatix::shapiro_test(!!dplyr::sym(metric_colname)) %>%
+        dplyr::select(p)
 
     if (shapiro_subset > 0.05 && shapiro_without_subset > 0.05) {
         return(TRUE)
@@ -285,6 +288,8 @@ verify_equal_disitributions <- function(
 
 #' Perform a t-test on a subset against the rest of a dataset
 #'
+#' There are two types of t-tests that this function can perform
+#' 
 #' @param input_df A dataframe that contains: a column with a grouping variable
 #' from which one can extract a subset of the data and a column containing
 #' a metric that the user wishes to compare between subset and rest of dataset.

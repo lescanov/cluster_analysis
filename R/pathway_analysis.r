@@ -158,6 +158,8 @@ save_dotplot <- function(pathway_analysis, title, path = "results/") {
     )
 }
 
+perform_gsea_and_ora <- function()
+
 # Save ridgeplot for GSEA analyses (does not work for ORA), automatically
 # to the results folder.
 
