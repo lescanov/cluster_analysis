@@ -85,7 +85,7 @@ assign_median_cutoff <- function(
     metric_colname
     ) {
         # Find median
-        median_stat <- median(input_df[[metric_colname]])
+        median_stat <- stats::median(input_df[[metric_colname]])
 
         # Adding cutoff
         result <- input_df %>%
