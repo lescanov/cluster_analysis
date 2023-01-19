@@ -4,26 +4,21 @@
 \alias{verify_equal_disitributions}
 \title{Verify if distributions under different grouping variables are equal}
 \usage{
-verify_equal_disitributions(
-  input_df,
-  grouping_colname,
-  metric_colname,
-  subset = "subset"
-)
+verify_equal_disitributions(input_df, grouping_colname, metric_colname)
 }
 \arguments{
 \item{input_df}{A dataframe that contains: a column with a grouping variable
 from which one can extract a subset of the data and a column containing
 a metric that the user wishes to compare between subset and rest of dataset.}
 
-\item{subset}{A string literal that specifies a subgroup in the grouping
-column}
-
 \item{grouping_column}{The column that contains the grouping variable, such
 as patient subtype, etc.}
 
 \item{metric_column}{The column that contains a metric the user would like
 to compare between two subsets of the dataset.}
+
+\item{subset}{A string literal that specifies a subgroup in the grouping
+column}
 }
 \value{
 A boolean value, TRUE if the p-value obtained from Kolmogorov-Smirnov
@@ -32,5 +27,6 @@ test is greater than 0.05 and FALSE if the p-value is less tha 0.05.
 \description{
 This function is meant to test equality of distributions, to determine
 if the Mann-Whitney test is appropriate. It uses the Kolomogorov-Smirnov test
-to assess if two distributions are equal.
+to assess if two distributions are equal. This function assumes that
+there are only two levels in grouping colname (subset and whole).
 }
