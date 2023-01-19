@@ -18,6 +18,7 @@ Imports:
     ggplot2,
     ggpubr,
     magrittr,
+    maxstat,
     org.Hs.eg.db,
     purrr,
     ReactomePA,

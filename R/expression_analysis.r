@@ -240,7 +240,8 @@ verify_normality <- function(
 #'
 #' This function is meant to test equality of distributions, to determine
 #' if the Mann-Whitney test is appropriate. It uses the Kolomogorov-Smirnov test
-#' to assess if two distributions are equal.
+#' to assess if two distributions are equal. This function assumes that
+#' there are only two levels in grouping colname (subset and whole).
 #'
 #' @param input_df A dataframe that contains: a column with a grouping variable
 #' from which one can extract a subset of the data and a column containing
@@ -258,28 +259,21 @@ verify_normality <- function(
 verify_equal_disitributions <- function(
     input_df,
     grouping_colname,
-    metric_colname,
-    subset = "subset"
+    metric_colname
 ) {
-    # Defining data for subset
-    subset_data <- input_df %>%
-        dplyr::filter(!!dplyr::sym(grouping_colname) %in% subset) %>%
-        dplyr::select(!!dplyr::sym(metric_colname)) %>%
-        tibble::deframe()
-
-    without_subset_data <- input_df %>%
-        dplyr::filter(!(!!dplyr::sym(grouping_colname)) %in% subset) %>%
-        dplyr::select(!!dplyr::sym(metric_colname)) %>%
-        tibble::deframe()
+    # Create formula
+    form <- as.formula(paste0(metric_colname, "~", grouping_colname))
 
     # Perform Kolmogorov-Smirnov test
-    ks_result <- ks.test(
-        x = without_subset_data,
-        y = subset_data,
+    ks_result <- stats::ks.test(
+        formula = form,
         data = input_df
     )
 
-    if (ks_result > 0.05) {
+    # Retrieving p value
+    ks_pvalue <- ks_result[["p.value"]]
+
+    if (ks_pvalue > 0.05) {
         return(TRUE)
     } else {
         return(FALSE)
@@ -289,7 +283,7 @@ verify_equal_disitributions <- function(
 #' Perform a t-test on a subset against the rest of a dataset
 #'
 #' There are two types of t-tests that this function can perform
-#' 
+#'
 #' @param input_df A dataframe that contains: a column with a grouping variable
 #' from which one can extract a subset of the data and a column containing
 #' a metric that the user wishes to compare between subset and rest of dataset.

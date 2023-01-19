@@ -69,3 +69,79 @@ plot_survplot <- function(survival_fit, survival_df, factor_colname) {
         ylab = "Survival probability [%]"
     )
 }
+
+#' Find median cutoff
+#'
+#' Adds a column that determines if a sample is above or below median
+#' in a given metric
+#'
+#' @param input_df The dataframe containing the metric
+#' @param metric_colname A string literal that refers to a column in input_df
+#'
+#' @return input_df but with an extra column detailing median status
+#' @export
+assign_median_cutoff <- function(
+    input_df,
+    metric_colname
+    ) {
+        # Find median
+        median_stat <- median(input_df[[metric_colname]])
+
+        # Adding cutoff
+        result <- input_df %>%
+            dplyr::mutate(
+                median_status = ifelse(
+                    !!dplyr::sym(metric_colname) > median_stat,
+                    "above",
+                    "below"
+                )
+            )
+        return(result)
+    }
+
+#' Find maxstat survival cutoff
+#'
+#' Adds a column that determines if a metric is above or below the
+#' maxstat cutoff.
+#'
+#' @param input_df The dataframe containing the metric
+#' @param metric_colname A string literal that refers to a column in input_df
+#' @param censor_colname A string literal referring to a column of censors
+#' @param survival_time_colname A string literal referring to a column for survival time
+#'
+#' @return input_df but with an extra column detailing median status
+#' @export
+assign_maxstat_cutoff <- function(
+    input_df,
+    metric_colname,
+    censor_colname,
+    survival_time_colname
+    ) {
+        # Finding maxstat cutoff
+        form <- paste0(
+                    survival_time_colname,
+                    ",",
+                    censor_colname
+                )
+
+        # Assigning maxstat
+        maxstat_cutoff <- maxstat::maxstat.test(
+            survival::Surv(
+                paste0(form, ") ~", !!dplyr::sym(metric_colname)),
+                data = input_df,
+                smethod = "LogRank",
+                pmethod = "Lau94"
+            )
+        )
+
+        # Assigning cutoff to input_df
+        result <- input_df %>%
+            dplyr::mutate(
+                maxstat_status = ifelse(
+                    !!dplyr::sym(metric_colname) > maxstat_cutoff,
+                    "above",
+                    "below"
+                )
+            )
+        return(result)
+    }
