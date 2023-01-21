@@ -114,26 +114,28 @@ assign_median_cutoff <- function(
 assign_maxstat_cutoff <- function(
     input_df,
     metric_colname,
-    censor_colname,
+    survival_censor_colname,
     survival_time_colname
     ) {
-        # Finding maxstat cutoff
-        form <- paste0(
-                    survival_time_colname,
-                    ",",
-                    censor_colname
-                )
+        # Creating survival formula
+        surv_formula <- stats::as.formula(
+            base::paste0(
+                "Surv(",
+                survival_time_colname,
+                ",",
+                survival_censor_colname,
+                ") ~ ",
+                metric_colname
+            )
+        )
 
         # Assigning maxstat
         maxstat_cutoff <- maxstat::maxstat.test(
-            survival::Surv(
-                paste0(form, ") ~", !!dplyr::sym(metric_colname)),
-                data = input_df,
-                smethod = "LogRank",
-                pmethod = "Lau94"
-            ),
-            data = input_df
-        )
+            surv_formula,
+            data = input_df,
+            smethod = "LogRank",
+            pmethod = "Lau94"
+        )[["estimate"]][["estimated cutpoint"]]
 
         # Assigning cutoff to input_df
         result <- input_df %>%
