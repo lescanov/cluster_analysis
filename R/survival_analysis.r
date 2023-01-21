@@ -131,7 +131,8 @@ assign_maxstat_cutoff <- function(
                 data = input_df,
                 smethod = "LogRank",
                 pmethod = "Lau94"
-            )
+            ),
+            data = input_df
         )
 
         # Assigning cutoff to input_df
